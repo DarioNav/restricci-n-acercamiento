@@ -1,0 +1,1042 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Generador de Providencia - Violencia Familiar</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/docx/7.8.2/docx.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+    <style>
+        #previsualizacion {
+            white-space: pre-wrap;
+            font-family: 'Times New Roman', Times, serif;
+            font-size: 12pt;
+            line-height: 1.5;
+            color: #000;
+            text-align: justify;
+        }
+        
+        /* Estilos para botones de micrófono */
+        .mic-button {
+            background: #f3f4f6;
+            border: 1px solid #d1d5db;
+            border-radius: 4px;
+            padding: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 36px;
+            height: 36px;
+            flex-shrink: 0;
+        }
+        
+        .mic-button:hover {
+            background: #e5e7eb;
+            border-color: #9ca3af;
+        }
+        
+        .mic-button.recording {
+            background: #dc2626;
+            border-color: #dc2626;
+            animation: pulse 1.5s infinite;
+        }
+        
+        .mic-button.recording svg {
+            color: white;
+        }
+        
+        @keyframes pulse {
+            0%, 100% {
+                box-shadow: 0 0 0 0 rgba(220, 38, 38, 0.4);
+            }
+            50% {
+                box-shadow: 0 0 0 8px rgba(220, 38, 38, 0);
+            }
+        }
+        
+        .field-with-mic {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+        
+        .field-with-mic input {
+            flex: 1;
+        }
+        
+        /* Inputs de nombres en mayúsculas */
+        #nombreDenunciante,
+        #nombreDenunciado,
+        #nombresHijos {
+            text-transform: uppercase;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 p-4">
+    <div class="max-w-7xl mx-auto">
+        <!-- Encabezado -->
+        <div class="bg-gradient-to-br from-slate-800 via-slate-700 to-slate-900 rounded-t-sm px-8 py-8 border-b-2 border-blue-400">
+            <div class="flex justify-between items-start">
+                <div>
+                    <h1 class="text-2xl font-bold text-white uppercase tracking-wide">Generador de Providencia</h1>
+                    <p class="text-sm text-gray-300 mt-2">Violencia Familiar - Medidas Cautelares</p>
+                </div>
+                <button id="activateVoiceBtn" onclick="activarDictadoVoz()" 
+                    class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-sm flex items-center gap-2 transition-all transform hover:scale-105 shadow-lg">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/>
+                        <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+                        <line x1="12" x2="12" y1="19" y2="22"/>
+                    </svg>
+                    <span>Activar Dictado por Voz</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Grid de 2 columnas -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <!-- Panel Formulario -->
+            <div class="bg-white rounded-b-sm lg:rounded-sm shadow-md border border-gray-200 p-6 space-y-6">
+                
+                <!-- Datos de la Denuncia -->
+                <div class="border-l-2 border-blue-300 pl-6">
+                    <h2 class="text-sm font-semibold text-gray-900 uppercase tracking-wider mb-4">Datos de la Denuncia</h2>
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-xs font-medium text-gray-600 uppercase tracking-wide mb-2">
+                                Fecha de Denuncia <span class="text-red-600">*</span>
+                            </label>
+                            <input type="date" id="fechaDenuncia" 
+                                class="w-full px-4 py-2.5 border border-gray-300 rounded-sm focus:outline-none focus:border-gray-500 transition-colors text-sm">
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-medium text-gray-600 uppercase tracking-wide mb-2">
+                                Número de Preventivo
+                            </label>
+                            <input type="text" id="numeroPreventivo" placeholder="Ej: 168/2025"
+                                class="w-full px-4 py-2.5 border border-gray-300 rounded-sm focus:outline-none focus:border-gray-500 transition-colors text-sm">
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-medium text-gray-600 uppercase tracking-wide mb-2">
+                                Denunciante (Apellido y Nombre) <span class="text-red-600">*</span>
+                            </label>
+                            <div class="field-with-mic">
+                                <input type="text" id="nombreDenunciante" placeholder="Ej: PÉREZ MARÍA"
+                                    class="w-full px-4 py-2.5 border border-gray-300 rounded-sm focus:outline-none focus:border-gray-500 transition-colors text-sm">
+                                <button type="button" class="mic-button" onclick="startVoiceRecognition('nombreDenunciante')" title="Dictar con micrófono">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/>
+                                        <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+                                        <line x1="12" x2="12" y1="19" y2="22"/>
+                                    </svg>
+                                </button>
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-medium text-gray-600 uppercase tracking-wide mb-2">
+                                Denunciado (Apellido y Nombre) <span class="text-red-600">*</span>
+                            </label>
+                            <div class="field-with-mic">
+                                <input type="text" id="nombreDenunciado" placeholder="Ej: GARCÍA JUAN"
+                                    class="w-full px-4 py-2.5 border border-gray-300 rounded-sm focus:outline-none focus:border-gray-500 transition-colors text-sm">
+                                <button type="button" class="mic-button" onclick="startVoiceRecognition('nombreDenunciado')" title="Dictar con micrófono">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/>
+                                        <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+                                        <line x1="12" x2="12" y1="19" y2="22"/>
+                                    </svg>
+                                </button>
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-medium text-gray-600 uppercase tracking-wide mb-2">
+                                Domicilio de la Denunciante <span class="text-red-600">*</span>
+                            </label>
+                            <div class="field-with-mic">
+                                <input type="text" id="domicilioDenunciante" placeholder="Ej: Calle Falsa 123"
+                                    class="w-full px-4 py-2.5 border border-gray-300 rounded-sm focus:outline-none focus:border-gray-500 transition-colors text-sm">
+                                <button type="button" class="mic-button" onclick="startVoiceRecognition('domicilioDenunciante')" title="Dictar con micrófono">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/>
+                                        <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+                                        <line x1="12" x2="12" y1="19" y2="22"/>
+                                    </svg>
+                                </button>
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-medium text-gray-600 uppercase tracking-wide mb-2">
+                                Número de Expediente
+                            </label>
+                            <input type="text" id="numeroExpediente" placeholder="Ej: 123/2025"
+                                class="w-full px-4 py-2.5 border border-gray-300 rounded-sm focus:outline-none focus:border-gray-500 transition-colors text-sm">
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-medium text-gray-600 uppercase tracking-wide mb-2">
+                                Número de Providencia
+                            </label>
+                            <input type="text" id="numeroProvidencia" placeholder="Ej: 45"
+                                class="w-full px-4 py-2.5 border border-gray-300 rounded-sm focus:outline-none focus:border-gray-500 transition-colors text-sm">
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-medium text-gray-600 uppercase tracking-wide mb-2">
+                                Fecha de Providencia
+                            </label>
+                            <input type="date" id="fechaProvidencia" 
+                                class="w-full px-4 py-2.5 border border-gray-300 rounded-sm focus:outline-none focus:border-gray-500 transition-colors text-sm">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Medidas Cautelares -->
+                <div class="border-l-2 border-green-300 pl-6">
+                    <h2 class="text-sm font-semibold text-gray-900 uppercase tracking-wider mb-4">Medidas Cautelares</h2>
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-xs font-medium text-gray-600 uppercase tracking-wide mb-2">
+                                Radio de Prohibición (metros)
+                            </label>
+                            <select id="distanciaProhibicion" 
+                                class="w-full px-4 py-2.5 border border-gray-300 rounded-sm focus:outline-none focus:border-gray-500 transition-colors text-sm">
+                                <option value="200">200 metros</option>
+                                <option value="300">300 metros</option>
+                                <option value="500" selected>500 metros</option>
+                                <option value="1000">1000 metros</option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-medium text-gray-600 uppercase tracking-wide mb-2">
+                                Vigencia de la Medida (días)
+                            </label>
+                            <input type="number" id="vigenciaDias" value="120" min="1" max="365"
+                                class="w-full px-4 py-2.5 border border-gray-300 rounded-sm focus:outline-none focus:border-gray-500 transition-colors text-sm">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Hijos -->
+                <div class="border-l-2 border-purple-300 pl-6">
+                    <h2 class="text-sm font-semibold text-gray-900 uppercase tracking-wider mb-4">Menores Involucrados</h2>
+                    <div class="space-y-4">
+                        <div class="flex items-center">
+                            <input type="checkbox" id="tieneHijos" 
+                                class="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500">
+                            <label for="tieneHijos" class="ml-2 text-sm font-medium text-gray-700">
+                                Hay hijos/menores involucrados
+                            </label>
+                        </div>
+
+                        <div id="seccionHijos" class="hidden space-y-4 pl-6 border-l-2 border-purple-200">
+                            <div>
+                                <label class="block text-xs font-medium text-gray-600 uppercase tracking-wide mb-2">
+                                    Cantidad de Hijos/Menores
+                                </label>
+                                <input type="number" id="numeroHijos" value="1" min="1" max="10"
+                                    class="w-full px-4 py-2.5 border border-gray-300 rounded-sm focus:outline-none focus:border-gray-500 transition-colors text-sm">
+                            </div>
+
+                            <div>
+                                <label class="block text-xs font-medium text-gray-600 uppercase tracking-wide mb-2">
+                                    Nombres de los Hijos/Menores
+                                </label>
+                                <div class="field-with-mic">
+                                    <input type="text" id="nombresHijos" placeholder="Ej: Juan Pérez, María Pérez"
+                                        class="w-full px-4 py-2.5 border border-gray-300 rounded-sm focus:outline-none focus:border-gray-500 transition-colors text-sm">
+                                    <button type="button" class="mic-button" onclick="startVoiceRecognition('nombresHijos')" title="Dictar con micrófono">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                            <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/>
+                                            <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+                                            <line x1="12" x2="12" y1="19" y2="22"/>
+                                        </svg>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Informes Periciales -->
+                <div class="border-l-2 border-orange-300 pl-6">
+                    <h2 class="text-sm font-semibold text-gray-900 uppercase tracking-wider mb-4">Informes Periciales</h2>
+                    <div class="space-y-3">
+                        <div class="flex items-center">
+                            <input type="checkbox" id="informePsicologicoDenunciante" checked
+                                class="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500">
+                            <label for="informePsicologicoDenunciante" class="ml-2 text-sm font-medium text-gray-700">
+                                Informe Psicológico de la Denunciante
+                            </label>
+                        </div>
+
+                        <div class="flex items-center">
+                            <input type="checkbox" id="informePsicologicoDenunciado" checked
+                                class="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500">
+                            <label for="informePsicologicoDenunciado" class="ml-2 text-sm font-medium text-gray-700">
+                                Evaluación Psicológica del Denunciado
+                            </label>
+                        </div>
+
+                        <div class="flex items-center">
+                            <input type="checkbox" id="informeSocioambiental" checked
+                                class="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500">
+                            <label for="informeSocioambiental" class="ml-2 text-sm font-medium text-gray-700">
+                                Informe Socio-Ambiental
+                            </label>
+                        </div>
+
+                        <div id="seccionSocioambiental" class="pl-6 border-l-2 border-orange-200">
+                            <label class="block text-xs font-medium text-gray-600 uppercase tracking-wide mb-2">
+                                Domicilio del Denunciado (para informe socio-ambiental)
+                            </label>
+                            <div class="field-with-mic">
+                                <input type="text" id="domicilioDenunciadoSocial" placeholder="Domicilio donde residirá el denunciado"
+                                    class="w-full px-4 py-2.5 border border-gray-300 rounded-sm focus:outline-none focus:border-gray-500 transition-colors text-sm">
+                                <button type="button" class="mic-button" onclick="startVoiceRecognition('domicilioDenunciadoSocial')" title="Dictar con micrófono">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/>
+                                        <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+                                        <line x1="12" x2="12" y1="19" y2="22"/>
+                                    </svg>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Intervenciones Institucionales -->
+                <div class="border-l-2 border-red-300 pl-6">
+                    <h2 class="text-sm font-semibold text-gray-900 uppercase tracking-wider mb-4">Intervenciones Institucionales</h2>
+                    <div class="space-y-3">
+                        <div class="flex items-center">
+                            <input type="checkbox" id="asesoraMinores" checked
+                                class="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500">
+                            <label for="asesoraMinores" class="ml-2 text-sm font-medium text-gray-700">
+                                Asesoría de Menores
+                            </label>
+                        </div>
+
+                        <div class="flex items-center">
+                            <input type="checkbox" id="dipna" checked
+                                class="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500">
+                            <label for="dipna" class="ml-2 text-sm font-medium text-gray-700">
+                                DIPNA
+                            </label>
+                        </div>
+
+                        <div class="flex items-center">
+                            <input type="checkbox" id="tratamientoPsicoterapeutico" checked
+                                class="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500">
+                            <label for="tratamientoPsicoterapeutico" class="ml-2 text-sm font-medium text-gray-700">
+                                Tratamiento Psicoterapéutico
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Botones de Acción Principal -->
+                <div class="flex gap-3 pt-6">
+                    <button onclick="copiarDocumento()" 
+                        class="flex-1 bg-slate-700 hover:bg-slate-800 text-white font-medium py-3 px-6 rounded-sm transition-colors flex items-center justify-center gap-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                        </svg>
+                        Copiar Providencia
+                    </button>
+                    
+                    <button onclick="limpiarFormulario()" 
+                        class="flex-1 bg-slate-500 hover:bg-slate-600 text-white font-medium py-3 px-6 rounded-sm transition-colors flex items-center justify-center gap-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="3 6 5 6 21 6"></polyline>
+                            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                        </svg>
+                        Limpiar
+                    </button>
+                </div>
+
+                <!-- Sección de Oficios -->
+                <div class="border-t-2 border-gray-200 pt-6 mt-6">
+                    <h2 class="text-sm font-semibold text-gray-900 uppercase tracking-wider mb-4 flex items-center gap-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                            <polyline points="14 2 14 8 20 8"></polyline>
+                            <line x1="16" x2="8" y1="13" y2="13"></line>
+                            <line x1="16" x2="8" y1="17" y2="17"></line>
+                            <polyline points="10 9 9 9 8 9"></polyline>
+                        </svg>
+                        Generar Oficios
+                    </h2>
+                    
+                    <div class="space-y-3">
+                        <button onclick="generarOficioTrabajadoresSociales()" 
+                            class="w-full bg-slate-600 hover:bg-slate-700 text-white font-medium py-2.5 px-4 rounded-sm transition-colors flex items-center justify-center gap-2 text-sm">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                                <polyline points="14 2 14 8 20 8"></polyline>
+                            </svg>
+                            Oficio a Trabajadores Sociales (Punto 10)
+                        </button>
+
+                        <button onclick="generarOficioPsicologia()" 
+                            class="w-full bg-slate-600 hover:bg-slate-700 text-white font-medium py-2.5 px-4 rounded-sm transition-colors flex items-center justify-center gap-2 text-sm">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                                <polyline points="14 2 14 8 20 8"></polyline>
+                            </svg>
+                            Oficio a Psicología Forense (Puntos 8 y 9)
+                        </button>
+
+                        <button onclick="generarOficioPolicia()" 
+                            class="w-full bg-slate-600 hover:bg-slate-700 text-white font-medium py-2.5 px-4 rounded-sm transition-colors flex items-center justify-center gap-2 text-sm">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                                <polyline points="14 2 14 8 20 8"></polyline>
+                            </svg>
+                            Oficio a Comisaría (Providencia Completa)
+                        </button>
+
+                        <button onclick="generarOficioDIPNA()" 
+                            class="w-full bg-slate-600 hover:bg-slate-700 text-white font-medium py-2.5 px-4 rounded-sm transition-colors flex items-center justify-center gap-2 text-sm">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                                <polyline points="14 2 14 8 20 8"></polyline>
+                            </svg>
+                            Oficio a DIPNA (Providencia Completa)
+                        </button>
+
+                        <button onclick="generarTodosLosOficios()" 
+                            class="w-full bg-slate-800 hover:bg-slate-900 text-white font-bold py-3 px-4 rounded-sm transition-colors flex items-center justify-center gap-2 text-sm shadow-lg border-2 border-slate-700">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                                <polyline points="14 2 14 8 20 8"></polyline>
+                                <line x1="12" x2="12" y1="18" y2="12"></line>
+                                <line x1="9" x2="15" y1="15" y2="15"></line>
+                            </svg>
+                            GENERAR TODOS LOS OFICIOS
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Panel Previsualización -->
+            <div class="bg-white rounded-sm shadow-md border border-gray-200 p-6">
+                <div class="flex justify-between items-center mb-4 pb-3 border-b-2 border-gray-200">
+                    <h2 class="text-sm font-semibold text-gray-900 uppercase tracking-wider">Previsualización del Documento</h2>
+                    <span class="text-xs text-gray-500 bg-gray-100 px-3 py-1 rounded-full">Actualización automática</span>
+                </div>
+                <div id="previsualizacion" class="bg-white border border-gray-300 rounded p-6 shadow-inner min-h-[600px]"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let recognition = null;
+        let isVoiceActivated = false;
+        let currentField = null;
+
+        // Variable global para almacenar los puntos de la providencia
+        let puntosProvidencia = {};
+
+        function activarDictadoVoz() {
+            isVoiceActivated = !isVoiceActivated;
+            const btn = document.getElementById('activateVoiceBtn');
+            
+            if (isVoiceActivated) {
+                btn.classList.add('bg-red-600');
+                btn.classList.remove('bg-blue-500');
+                btn.innerHTML = `
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/>
+                        <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+                        <line x1="12" x2="12" y1="19" y2="22"/>
+                    </svg>
+                    <span>Dictado Activado - Click para Desactivar</span>
+                `;
+                alert('Dictado por voz activado. Haz click en los botones de micrófono junto a cada campo para dictar.');
+            } else {
+                btn.classList.remove('bg-red-600');
+                btn.classList.add('bg-blue-500');
+                btn.innerHTML = `
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/>
+                        <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+                        <line x1="12" x2="12" y1="19" y2="22"/>
+                    </svg>
+                    <span>Activar Dictado por Voz</span>
+                `;
+            }
+        }
+
+        function startVoiceRecognition(fieldId) {
+            if (!isVoiceActivated) {
+                alert('Primero debes activar el dictado por voz usando el botón principal.');
+                return;
+            }
+
+            if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
+                alert('Tu navegador no soporta reconocimiento de voz. Usa Google Chrome.');
+                return;
+            }
+
+            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+            recognition = new SpeechRecognition();
+            recognition.lang = 'es-ES';
+            recognition.continuous = false;
+            recognition.interimResults = false;
+
+            currentField = document.getElementById(fieldId);
+            const micButton = event.currentTarget;
+            micButton.classList.add('recording');
+
+            recognition.onresult = function(event) {
+                const transcript = event.results[0][0].transcript;
+                currentField.value = transcript.toUpperCase();
+                generarDocumento();
+            };
+
+            recognition.onerror = function(event) {
+                console.error('Error de reconocimiento:', event.error);
+                alert('Error en el reconocimiento de voz: ' + event.error);
+            };
+
+            recognition.onend = function() {
+                micButton.classList.remove('recording');
+            };
+
+            recognition.start();
+        }
+
+        function generarDocumento() {
+            const fechaDenuncia = document.getElementById('fechaDenuncia').value;
+            const numeroPreventivo = document.getElementById('numeroPreventivo').value;
+            const nombreDenunciante = document.getElementById('nombreDenunciante').value.toUpperCase();
+            const nombreDenunciado = document.getElementById('nombreDenunciado').value.toUpperCase();
+            const domicilioDenunciante = document.getElementById('domicilioDenunciante').value;
+            const distanciaProhibicion = document.getElementById('distanciaProhibicion').value;
+            const vigenciaDias = document.getElementById('vigenciaDias').value;
+            const tieneHijos = document.getElementById('tieneHijos').checked;
+            const numeroHijos = document.getElementById('numeroHijos').value;
+            const nombresHijos = document.getElementById('nombresHijos').value.toUpperCase();
+            const informePsicologicoDenunciante = document.getElementById('informePsicologicoDenunciante').checked;
+            const informePsicologicoDenunciado = document.getElementById('informePsicologicoDenunciado').checked;
+            const informeSocioambiental = document.getElementById('informeSocioambiental').checked;
+            const domicilioDenunciadoSocial = document.getElementById('domicilioDenunciadoSocial').value;
+            const asesoraMinores = document.getElementById('asesoraMinores').checked;
+            const dipna = document.getElementById('dipna').checked;
+            const tratamientoPsicoterapeutico = document.getElementById('tratamientoPsicoterapeutico').checked;
+
+            const fechaFormateada = fechaDenuncia ? new Date(fechaDenuncia + 'T00:00:00').toLocaleDateString('es-AR', { 
+                day: '2-digit', 
+                month: '2-digit', 
+                year: 'numeric' 
+            }) : '[FECHA]';
+
+            let hijosTexto = '';
+            if (tieneHijos) {
+                hijosTexto = nombresHijos ? `, y/o de ${nombresHijos}` : '';
+            }
+
+            let punto1 = `1º) HACER LUGAR A LA MEDIDA CAUTELAR solicitada en la denuncia y en consecuencia, EXCLUIR DEL HOGAR, sito en ${domicilioDenunciante || '[DOMICILIO DENUNCIANTE]'} de esta ciudad, al Sr. ${nombreDenunciado || '[DENUNCIADO]'}, y PROHIBIR el acceso y su aproximación por un radio de ${distanciaProhibicion} mts. del domicilio indicado y/o lugares donde se encuentre la actora, Sra. ${nombreDenunciante || '[DENUNCIANTE]'}${hijosTexto}, sin caución atento al carácter de familia de la cuestión; debiendo además el Sr. ${nombreDenunciado || '[DENUNCIADO]'}, ABSTENERSE de realizar cualquier acto de perturbación y/o maltratos, directa o indirecta, física, verbal o a través de cualquier medio, respecto de la Sra. ${nombreDenunciante || '[DENUNCIANTE]'}${hijosTexto} bajo apercibimiento de poner en conocimiento del Fiscal Penal.`;
+
+            let punto2 = `2º) A los fines del cumplimiento de las Medidas Decretadas en el punto 1°, y de conformidad con lo dispuesto por el art. 709 CCyC corresponde LÍBRESE OFICIO, mediante correo electrónico y/o comuníquese mediante whatsapp, a la Comisaría de la Mujer y el Menor, dándose intervención y diligenciamiento al funcionario policial destacado al efecto, concediéndole expresamente amplias facultades para el diligenciamiento del mencionado oficio, conforme lo previsto por el artículo 214 del CPCyC; pudiéndose requerir el auxilio del servicio de ambulancia, allanar domicilio, cerrajero y/o cualquier otro para el cumplimiento de la medida aquí dictada, debiendo retirar de la finca ubicada en ${domicilioDenunciante || '[DOMICILIO DENUNCIANTE]'} de esta ciudad, al Sr. ${nombreDenunciado || '[DENUNCIADO]'}, con sus enseres y efectos personales, quien deberá denunciar en ese acto el domicilio al que se trasladará y donde residirá con motivo de la medida ordenada y cualquier otro dato que pudiere ser útil a los fines de su futura localización. Asimismo, dese intervención en dicha diligencia a la denunciante Sra. ${nombreDenunciante || '[DENUNCIANTE]'}, con facultades de denunciar e individualizar domicilio e inclusive de sustituir; ello a los fines del efectivo cumplimiento de la medida aquí dispuesta, debiendo en el mismo acto, reintegrarla al domicilio de donde fuera excluido el demandado.`;
+
+            let punto3Texto = tratamientoPsicoterapeutico 
+                ? `3º) DISPONER que las medidas dispuestas tendrán vigencia por ${vigenciaDias} días (${numeroALetras(vigenciaDias)}) y/o hasta tanto el Juzgado no disponga su levantamiento u otra medida en su reemplazo y mientras no cese la situación de riesgo, debiendo las partes acreditar haber concurrido al tratamiento psicoterapéutico ordenado en el punto 4°) a).`
+                : `3º) DISPONER que las medidas dispuestas tendrán vigencia por ${vigenciaDias} días (${numeroALetras(vigenciaDias)}) y/o hasta tanto el Juzgado no disponga su levantamiento u otra medida en su reemplazo y mientras no cese la situación de riesgo.`;
+
+            let punto4a = tratamientoPsicoterapeutico 
+                ? 'A) INICIAR un tratamiento psicoterapéutico en una institución pública y/o privada de esta ciudad; debiendo presentar constancia de su cumplimiento y evolución en forma mensual; '
+                : '';
+
+            let punto4 = `4º) INFORMAR A LAS PARTES QUE ASUMEN LAS SIGUIENTES CARGAS PROCESALES Y DEBERES: ${punto4a}B) El Sr. ${nombreDenunciado || '[DENUNCIADO]'}, deberá denunciar su domicilio real, celular de contacto y mail si lo tuviere. C) Deberán las partes en adelante, comparecer con asistencia de un abogado/a de la matrícula y/o con patrocinio letrado del Defensor Oficial de Pobres y Ausentes (si no tuvieren recursos suficientes), conforme art. 702 del CPFNyA; D) Hágase saber a las partes que los plazos recursivos se regirán por lo dispuesto por el art. 707 del CPFNyA. Asimismo, que la audiencia del art. 712 se llevará a cabo una vez cumplidas las medidas dispuestas y acreditada la realización de los tratamientos ordenados.`;
+
+            let punto5 = `5°) HACER SABER a las partes que conforme art. 702 de CPFNA, se deberán presentar a estar a derecho con el patrocinio letrado de la Defensoría de Pobres y Ausentes (Defensoría de Pobres y Ausentes sito en Caa Guazu 432, Cel 3756-434222), dejando a salvo su elección de hacerse representar por abogado particular`;
+
+            let punto6 = `6º) HACER SABER A LA ACTORA que ante cualquier cuestión relacionada a la violencia denunciada podrá recurrir también a las líneas telefónicas 144 y 137 y a las líneas del Centro de Atención Jurídico Integral a Víctimas de Violencia de Género TELÉFONO GRATUITO 0-800-444-0562, whatsapp 3756-407359. Asimismo podrá concurrir a la Oficina de Violencia, sito en calle San Martin N° 1147, de 8 a 13, o comunicarse al tel. celular, para recibir información.`;
+
+            let punto7 = `7º) HACER SABER a las partes, que toda otra cuestión, que no se refiera exclusivamente a situaciones de Violencia, deberán interponerla por la vía procesal autónoma correspondiente, mediante patrocinio letrado. RECORDAR a las partes que una relación parental armoniosa redunda en beneficio de sus hijos; por ello deberán arbitrar todos los medios necesarios a los fines de coordinar la crianza, educación y acompañamiento de los mismos`;
+
+            let punto8 = '';
+            if (informePsicologicoDenunciante) {
+                punto8 = `8°) Requerir al cuerpo de psicología Forense que realice una entrevista psicológica a la Sra. ${nombreDenunciante || '[DENUNCIANTE]'} y evalué el riesgo psicofísico a los fines de determinar los daños sufridos por la víctima y su interacción familiar (art. 704 CPFNyA primera parte).`;
+            }
+
+            let punto9 = '';
+            if (informePsicologicoDenunciado) {
+                punto9 = `9°) Asimismo, requiérase al Cuerpo de Psicología Forense proceda a otorgar turno para evaluar psicológicamente al Sr. ${nombreDenunciado || '[DENUNCIADO]'}, a fin de conocer su actual estado psicológico, si es dueño de un temperamento violento, si padece consumo problemático de sustancias y en su caso si requiere el inicio de tratamiento psicoterapéutico y cualquier otro dato de interés para las presentes actuaciones. FECHO y recibidos los turnos solicitados, NOTIFÍQUESE a las partes por cualquier medio fehaciente, dejándose la debida constancia.-`;
+            }
+
+            let punto10 = '';
+            if (informeSocioambiental) {
+                punto10 = `10°) A fin de lograr un mayor conocimiento respecto de la situación de violencia denunciada, sin perjuicio de la medida cautelar adoptada, REQUIÉRASE AL CUERPO DE TRABAJADORES SOCIALES FORENSES practiquen un amplio informe socio ambiental en el domicilio de la Sra. ${nombreDenunciante || '[DENUNCIANTE]'}, sito en calle ${domicilioDenunciante || '[DOMICILIO DENUNCIANTE]'} de esta ciudad, y del Sr. ${nombreDenunciado || '[DENUNCIADO]'}, en el domicilio que denuncie${domicilioDenunciadoSocial ? ` (${domicilioDenunciadoSocial})` : ''}, debiendo el trabajador social interviniente utilizar las técnicas que estime necesarias y correctas a los efectos del cumplimiento de la manda, a fin de conocer las variables de la residencia donde habitan los nombrados, debiendo indagar entre los vecinos si conocen a las partes y si saben de algún hecho de violencia que se haya suscitado entre ellos, y toda otra cuestión que resulte de interés para la causa.-`;
+            }
+
+            let punto11 = '';
+            if (asesoraMinores) {
+                punto11 = `11°) Dese intervención a la Asesoría de Menores.-`;
+            }
+
+            let punto12 = '';
+            if (dipna) {
+                punto12 = `12°) Dese intervención al DIPNA notificándose de la presente mediante correo electrónico institucional.`;
+            }
+
+            let punto13 = `13º) HABILÍTESE DÍAS Y HORAS HÁBILES para el diligenciamiento de los Oficios, Cédulas y Mandamiento.`;
+
+            // Guardar puntos en variable global
+            puntosProvidencia = {
+                punto1, punto2, punto3: punto3Texto, punto4, punto5, punto6, punto7,
+                punto8, punto9, punto10, punto11, punto12, punto13
+            };
+
+            let documentoFinal = `I. Por recibida denuncia de la Sra. ${nombreDenunciante || '[DENUNCIANTE]'} realizada ante la Comisaría de la Mujer y el menor de esta ciudad, en fecha ${fechaFormateada}, bajo preventivo N° ${numeroPreventivo || '[N° PREVENTIVO]'}. Agréguese la documentación adjunta. Agréguense demás constancias adjuntas. Dese ingreso al presente y caratúlese como "${nombreDenunciante || '[DENUNCIANTE]'} C/ ${nombreDenunciado || '[DENUNCIADO]'} S/ VIOLENCIA FAMILIAR".
+
+II. Por promovida la presente acción que tramitará de conformidad a las disposiciones de los art. 694 y siguientes del Código Procesal de Familia, Niñez y Adolescencia de la Provincia de Corrientes.
+
+III. CONSIDERANDO: Que las normativas relacionadas (Ley 26485, 5019, Código Procesal de Familia, Niñez y Adolescencia) definen a la violencia de género como toda conducta, acción u omisión que, de manera directa o indirecta, tanto en el ámbito público como en el privado, basada en una relación desigual de poder, afecte su vida, libertad, dignidad, integridad física, psicológica, sexual, económica o patrimonial, como así también su seguridad personal. Y además, consideran violencia indirecta, a toda conducta, acción, omisión, disposición, criterio o práctica discriminatoria que ponga a la mujer en desventaja con respecto al varón. Que los elementos obrantes hasta esta instancia resultan suficientes para otorgar en el marco de debida diligencia un régimen de amparo y protección a las víctimas. Siendo suficiente la verosimilitud de la denuncia y la existencia de una sospecha de maltrato (CNCVI., Sala C, 28/3/00, "D.I.A, c/L.D.A", ED 189-313; ÍDEM, Sala K, 3/2/03, "R.G.O. y otro") y conforme lo previsto por el art. 709 inc. b), c) y d) del Código Procesal de Familia, Niñez y Adolescencia de la Provincia de Corrientes,
+
+RESUELVO:
+
+${punto1}
+
+${punto2}
+
+${punto3Texto}
+
+${punto4}
+
+${punto5}
+
+${punto6}
+
+${punto7}
+
+${punto8 ? punto8 + '\n\n' : ''}${punto9 ? punto9 + '\n\n' : ''}${punto10 ? punto10 + '\n\n' : ''}${punto11 ? punto11 + '\n\n' : ''}${punto12 ? punto12 + '\n\n' : ''}${punto13}`;
+
+            document.getElementById('previsualizacion').textContent = documentoFinal;
+        }
+
+        function numeroALetras(num) {
+            const unidades = ['', 'uno', 'dos', 'tres', 'cuatro', 'cinco', 'seis', 'siete', 'ocho', 'nueve'];
+            const decenas = ['', '', 'veinte', 'treinta', 'cuarenta', 'cincuenta', 'sesenta', 'setenta', 'ochenta', 'noventa'];
+            const especiales = ['diez', 'once', 'doce', 'trece', 'catorce', 'quince', 'dieciséis', 'diecisiete', 'dieciocho', 'diecinueve'];
+            const centenas = ['', 'ciento', 'doscientos', 'trescientos', 'cuatrocientos', 'quinientos', 'seiscientos', 'setecientos', 'ochocientos', 'novecientos'];
+
+            num = parseInt(num);
+
+            if (num === 0) return 'cero';
+            if (num === 100) return 'cien';
+            if (num < 10) return unidades[num];
+            if (num >= 10 && num < 20) return especiales[num - 10];
+            if (num >= 20 && num < 30) {
+                return num === 20 ? 'veinte' : 'veinti' + unidades[num % 10];
+            }
+            if (num >= 30 && num < 100) {
+                return decenas[Math.floor(num / 10)] + (num % 10 !== 0 ? ' y ' + unidades[num % 10] : '');
+            }
+            if (num >= 100 && num < 1000) {
+                const resto = num % 100;
+                return centenas[Math.floor(num / 100)] + (resto !== 0 ? ' ' + numeroALetras(resto) : '');
+            }
+            return num.toString();
+        }
+
+        function copiarDocumento() {
+            const texto = document.getElementById('previsualizacion').textContent;
+            navigator.clipboard.writeText(texto).then(() => {
+                alert('Providencia copiada al portapapeles');
+            }).catch(err => {
+                console.error('Error al copiar:', err);
+                alert('Error al copiar el documento');
+            });
+        }
+
+        // ========== FUNCIONES DE GENERACIÓN DE OFICIOS ==========
+
+        function obtenerDatosFormulario() {
+            return {
+                fechaDenuncia: document.getElementById('fechaDenuncia').value,
+                numeroPreventivo: document.getElementById('numeroPreventivo').value,
+                nombreDenunciante: document.getElementById('nombreDenunciante').value.toUpperCase(),
+                nombreDenunciado: document.getElementById('nombreDenunciado').value.toUpperCase(),
+                domicilioDenunciante: document.getElementById('domicilioDenunciante').value,
+                numeroExpediente: document.getElementById('numeroExpediente').value,
+                numeroProvidencia: document.getElementById('numeroProvidencia').value,
+                fechaProvidencia: document.getElementById('fechaProvidencia').value
+            };
+        }
+
+        function formatearFecha(fecha) {
+            if (!fecha) return '[FECHA]';
+            const date = new Date(fecha + 'T00:00:00');
+            const opciones = { day: '2-digit', month: 'long', year: 'numeric' };
+            const fechaFormateada = date.toLocaleDateString('es-AR', opciones);
+            return fechaFormateada.charAt(0).toUpperCase() + fechaFormateada.slice(1);
+        }
+
+        async function crearOficioDocx(destinatario, asunto, puntoTranscrito) {
+            const datos = obtenerDatosFormulario();
+            const fechaFormateada = formatearFecha(datos.fechaProvidencia || datos.fechaDenuncia);
+            
+            const numeroOficio = datos.numeroProvidencia || 'XX';
+            const año = datos.fechaProvidencia ? new Date(datos.fechaProvidencia).getFullYear() : new Date().getFullYear();
+            
+            const caratula = `"${datos.nombreDenunciante || '[DENUNCIANTE]'} C/ ${datos.nombreDenunciado || '[DENUNCIADO]'} S/ VIOLENCIA FAMILIAR"`;
+            const expediente = datos.numeroExpediente || 'XXX/año';
+
+            const contenido = `OFICIO Nº ${numeroOficio}/${año}.-
+
+Santo Tomé (Ctes.), ${fechaFormateada}.-
+
+Al
+
+${destinatario}
+
+SANTO TOMÉ (CTES.)
+
+Me dirijo a Uds. en los autos: ${caratula}, Expte. N° ${expediente}, de trámite ante este Juzgado de JUZGADO DE FAMILIA, NIÑEZ Y ADOLESCENCIA de la ciudad de Santo Tomé (Ctes.), a cargo de la Dra. CLAUDIA LUCO MONTERO, Secretaría del autorizante, a fin solicitarle la realización ${asunto}.
+
+La medida que así lo dispone, en su parte pertinente, a continuación se transcribe y dice: "Nº ${numeroOficio} ///Santo Tomé (Ctes.), ${fechaFormateada}: ${puntoTranscrito}
+
+(Fdo.) Dra. CLAUDIA LUCO MONTERO, Jueza - Dr. GERMAN DIONICIO AGUIRRE, Prosecretario".
+
+Saludo a S. Sa. muy atte.-`;
+
+            return contenido;
+        }
+
+        async function generarOficioTrabajadoresSociales() {
+            try {
+                if (!puntosProvidencia.punto10) {
+                    alert('No se ha marcado el informe socio-ambiental en la providencia.');
+                    return;
+                }
+
+                const contenido = await crearOficioDocx(
+                    'CUERPO DE TRABAJADORES SOCIALES FORENSES',
+                    'un INFORME SOCIO AMBIENTAL',
+                    puntosProvidencia.punto10
+                );
+
+                descargarComoTxt(contenido, 'Oficio_Trabajadores_Sociales.txt');
+                alert('Oficio a Trabajadores Sociales generado exitosamente');
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Error al generar el oficio: ' + error.message);
+            }
+        }
+
+        async function generarOficioPsicologia() {
+            try {
+                if (!puntosProvidencia.punto8 && !puntosProvidencia.punto9) {
+                    alert('No se han marcado los informes psicológicos en la providencia.');
+                    return;
+                }
+
+                let puntosTranscritos = '';
+                if (puntosProvidencia.punto8) puntosTranscritos += puntosProvidencia.punto8 + '\n\n';
+                if (puntosProvidencia.punto9) puntosTranscritos += puntosProvidencia.punto9;
+
+                const contenido = await crearOficioDocx(
+                    'CUERPO DE PSICOLOGÍA FORENSE',
+                    'EVALUACIONES PSICOLÓGICAS',
+                    puntosTranscritos
+                );
+
+                descargarComoTxt(contenido, 'Oficio_Psicologia_Forense.txt');
+                alert('Oficio a Psicología Forense generado exitosamente');
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Error al generar el oficio: ' + error.message);
+            }
+        }
+
+        async function generarOficioPolicia() {
+            try {
+                const providenciaCompleta = document.getElementById('previsualizacion').textContent;
+
+                const datos = obtenerDatosFormulario();
+                const fechaFormateada = formatearFecha(datos.fechaProvidencia || datos.fechaDenuncia);
+                
+                const numeroOficio = datos.numeroProvidencia || 'XX';
+                const año = datos.fechaProvidencia ? new Date(datos.fechaProvidencia).getFullYear() : new Date().getFullYear();
+                
+                const caratula = `"${datos.nombreDenunciante || '[DENUNCIANTE]'} C/ ${datos.nombreDenunciado || '[DENUNCIADO]'} S/ VIOLENCIA FAMILIAR"`;
+                const expediente = datos.numeroExpediente || 'XXX/año';
+
+                const contenido = `OFICIO Nº ${numeroOficio}/${año}.-
+
+Santo Tomé (Ctes.), ${fechaFormateada}.-
+
+A LA
+
+COMISARÍA DE LA MUJER Y EL MENOR
+
+SANTO TOMÉ (CTES.)
+
+Me dirijo a Uds. en los autos: ${caratula}, Expte. N° ${expediente}, de trámite ante este Juzgado de JUZGADO DE FAMILIA, NIÑEZ Y ADOLESCENCIA de la ciudad de Santo Tomé (Ctes.), a cargo de la Dra. CLAUDIA LUCO MONTERO, Secretaría del autorizante, a fin de poner en su conocimiento y dar cumplimiento a la MEDIDA CAUTELAR dictada en estos autos.
+
+La providencia completa, a continuación se transcribe y dice:
+
+"${providenciaCompleta}"
+
+(Fdo.) Dra. CLAUDIA LUCO MONTERO, Jueza - Dr. GERMAN DIONICIO AGUIRRE, Prosecretario.
+
+Saludo a S. Sa. muy atte.-`;
+
+                descargarComoTxt(contenido, 'Oficio_Comisaria_Mujer_Menor.txt');
+                alert('Oficio a Comisaría generado exitosamente');
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Error al generar el oficio: ' + error.message);
+            }
+        }
+
+        async function generarOficioDIPNA() {
+            try {
+                if (!puntosProvidencia.punto12) {
+                    alert('No se ha marcado la intervención de DIPNA en la providencia.');
+                    return;
+                }
+
+                const providenciaCompleta = document.getElementById('previsualizacion').textContent;
+
+                const datos = obtenerDatosFormulario();
+                const fechaFormateada = formatearFecha(datos.fechaProvidencia || datos.fechaDenuncia);
+                
+                const numeroOficio = datos.numeroProvidencia || 'XX';
+                const año = datos.fechaProvidencia ? new Date(datos.fechaProvidencia).getFullYear() : new Date().getFullYear();
+                
+                const caratula = `"${datos.nombreDenunciante || '[DENUNCIANTE]'} C/ ${datos.nombreDenunciado || '[DENUNCIADO]'} S/ VIOLENCIA FAMILIAR"`;
+                const expediente = datos.numeroExpediente || 'XXX/año';
+
+                const contenido = `OFICIO Nº ${numeroOficio}/${año}.-
+
+Santo Tomé (Ctes.), ${fechaFormateada}.-
+
+A
+
+DIPNA (DIRECCIÓN DE PROTECCIÓN DE NIÑAS, NIÑOS Y ADOLESCENTES)
+
+SANTO TOMÉ (CTES.)
+
+Me dirijo a Uds. en los autos: ${caratula}, Expte. N° ${expediente}, de trámite ante este Juzgado de JUZGADO DE FAMILIA, NIÑEZ Y ADOLESCENCIA de la ciudad de Santo Tomé (Ctes.), a cargo de la Dra. CLAUDIA LUCO MONTERO, Secretaría del autorizante, a fin de poner en su conocimiento la presente situación de violencia familiar en la que se encuentran involucrados menores de edad.
+
+La providencia completa, a continuación se transcribe y dice:
+
+"${providenciaCompleta}"
+
+(Fdo.) Dra. CLAUDIA LUCO MONTERO, Jueza - Dr. GERMAN DIONICIO AGUIRRE, Prosecretario.
+
+Saludo a S. Sa. muy atte.-`;
+
+                descargarComoTxt(contenido, 'Oficio_DIPNA.txt');
+                alert('Oficio a DIPNA generado exitosamente');
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Error al generar el oficio: ' + error.message);
+            }
+        }
+
+        function descargarComoTxt(contenido, nombreArchivo) {
+            const blob = new Blob([contenido], { type: 'text/plain;charset=utf-8' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = nombreArchivo;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            window.URL.revokeObjectURL(url);
+        }
+
+        async function generarTodosLosOficios() {
+            try {
+                let generados = [];
+                let noGenerados = [];
+
+                // Oficio Trabajadores Sociales
+                if (puntosProvidencia.punto10) {
+                    await generarOficioTrabajadoresSociales();
+                    generados.push('Trabajadores Sociales');
+                } else {
+                    noGenerados.push('Trabajadores Sociales (no marcado)');
+                }
+
+                // Pequeña pausa entre generaciones
+                await new Promise(resolve => setTimeout(resolve, 500));
+
+                // Oficio Psicología
+                if (puntosProvidencia.punto8 || puntosProvidencia.punto9) {
+                    await generarOficioPsicologia();
+                    generados.push('Psicología Forense');
+                } else {
+                    noGenerados.push('Psicología Forense (no marcado)');
+                }
+
+                await new Promise(resolve => setTimeout(resolve, 500));
+
+                // Oficio Policía
+                await generarOficioPolicia();
+                generados.push('Comisaría');
+
+                await new Promise(resolve => setTimeout(resolve, 500));
+
+                // Oficio DIPNA
+                if (puntosProvidencia.punto12) {
+                    await generarOficioDIPNA();
+                    generados.push('DIPNA');
+                } else {
+                    noGenerados.push('DIPNA (no marcado)');
+                }
+
+                let mensaje = `Se generaron ${generados.length} oficios:\n\n`;
+                mensaje += generados.map(o => `✓ ${o}`).join('\n');
+                
+                if (noGenerados.length > 0) {
+                    mensaje += '\n\nNo se generaron:\n';
+                    mensaje += noGenerados.map(o => `✗ ${o}`).join('\n');
+                }
+
+                alert(mensaje);
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Error al generar los oficios: ' + error.message);
+            }
+        }
+
+        // ========== FIN FUNCIONES DE OFICIOS ==========
+
+        function guardarDatos() {
+            const datos = {
+                fechaDenuncia: document.getElementById('fechaDenuncia').value,
+                numeroPreventivo: document.getElementById('numeroPreventivo').value,
+                nombreDenunciante: document.getElementById('nombreDenunciante').value,
+                nombreDenunciado: document.getElementById('nombreDenunciado').value,
+                domicilioDenunciante: document.getElementById('domicilioDenunciante').value,
+                numeroExpediente: document.getElementById('numeroExpediente').value,
+                numeroProvidencia: document.getElementById('numeroProvidencia').value,
+                fechaProvidencia: document.getElementById('fechaProvidencia').value,
+                distanciaProhibicion: document.getElementById('distanciaProhibicion').value,
+                vigenciaDias: document.getElementById('vigenciaDias').value,
+                tieneHijos: document.getElementById('tieneHijos').checked,
+                numeroHijos: document.getElementById('numeroHijos').value,
+                nombresHijos: document.getElementById('nombresHijos').value,
+                informePsicologicoDenunciante: document.getElementById('informePsicologicoDenunciante').checked,
+                informePsicologicoDenunciado: document.getElementById('informePsicologicoDenunciado').checked,
+                informeSocioambiental: document.getElementById('informeSocioambiental').checked,
+                domicilioDenunciadoSocial: document.getElementById('domicilioDenunciadoSocial').value,
+                asesoraMinores: document.getElementById('asesoraMinores').checked,
+                dipna: document.getElementById('dipna').checked,
+                tratamientoPsicoterapeutico: document.getElementById('tratamientoPsicoterapeutico').checked
+            };
+            localStorage.setItem('datosProvidenciaVF', JSON.stringify(datos));
+        }
+
+        function guardarDatosManual() {
+            guardarDatos();
+            alert('Datos guardados correctamente');
+        }
+
+        function cargarDatos() {
+            const datos = localStorage.getItem('datosProvidenciaVF');
+            if (datos) {
+                const parsed = JSON.parse(datos);
+                document.getElementById('fechaDenuncia').value = parsed.fechaDenuncia || '';
+                document.getElementById('numeroPreventivo').value = parsed.numeroPreventivo || '';
+                document.getElementById('nombreDenunciante').value = parsed.nombreDenunciante || '';
+                document.getElementById('nombreDenunciado').value = parsed.nombreDenunciado || '';
+                document.getElementById('domicilioDenunciante').value = parsed.domicilioDenunciante || '';
+                document.getElementById('numeroExpediente').value = parsed.numeroExpediente || '';
+                document.getElementById('numeroProvidencia').value = parsed.numeroProvidencia || '';
+                document.getElementById('fechaProvidencia').value = parsed.fechaProvidencia || '';
+                document.getElementById('distanciaProhibicion').value = parsed.distanciaProhibicion || '500';
+                document.getElementById('vigenciaDias').value = parsed.vigenciaDias || '120';
+                document.getElementById('tieneHijos').checked = parsed.tieneHijos || false;
+                document.getElementById('numeroHijos').value = parsed.numeroHijos || '1';
+                document.getElementById('nombresHijos').value = parsed.nombresHijos || '';
+                document.getElementById('informePsicologicoDenunciante').checked = parsed.informePsicologicoDenunciante !== false;
+                document.getElementById('informePsicologicoDenunciado').checked = parsed.informePsicologicoDenunciado !== false;
+                document.getElementById('informeSocioambiental').checked = parsed.informeSocioambiental !== false;
+                document.getElementById('domicilioDenunciadoSocial').value = parsed.domicilioDenunciadoSocial || '';
+                document.getElementById('asesoraMinores').checked = parsed.asesoraMinores !== false;
+                document.getElementById('dipna').checked = parsed.dipna !== false;
+                document.getElementById('tratamientoPsicoterapeutico').checked = parsed.tratamientoPsicoterapeutico !== false;
+                
+                if (parsed.tieneHijos) {
+                    document.getElementById('seccionHijos').classList.remove('hidden');
+                }
+                if (parsed.informeSocioambiental) {
+                    document.getElementById('seccionSocioambiental').classList.remove('hidden');
+                }
+            }
+        }
+
+        function limpiarFormulario() {
+            if (confirm('¿Está seguro de que desea limpiar el formulario?')) {
+                document.querySelectorAll('input[type="text"], input[type="date"], input[type="number"]').forEach(input => {
+                    input.value = '';
+                });
+                document.getElementById('distanciaProhibicion').value = '500';
+                document.getElementById('vigenciaDias').value = '120';
+                document.getElementById('fechaDenuncia').value = new Date().toISOString().split('T')[0];
+                document.getElementById('fechaProvidencia').value = new Date().toISOString().split('T')[0];
+                document.getElementById('tieneHijos').checked = false;
+                document.getElementById('seccionHijos').classList.add('hidden');
+                generarDocumento();
+            }
+        }
+
+        // Event listeners
+        document.getElementById('tieneHijos').addEventListener('change', function() {
+            const seccion = document.getElementById('seccionHijos');
+            if (this.checked) {
+                seccion.classList.remove('hidden');
+            } else {
+                seccion.classList.add('hidden');
+            }
+            generarDocumento();
+        });
+
+        document.getElementById('informeSocioambiental').addEventListener('change', function() {
+            const seccion = document.getElementById('seccionSocioambiental');
+            if (this.checked) {
+                seccion.classList.remove('hidden');
+            } else {
+                seccion.classList.add('hidden');
+            }
+            generarDocumento();
+        });
+
+        // Inicialización
+        window.onload = function() {
+            cargarDatos();
+            const hoy = new Date().toISOString().split('T')[0];
+            if (!document.getElementById('fechaDenuncia').value) {
+                document.getElementById('fechaDenuncia').value = hoy;
+            }
+            if (!document.getElementById('fechaProvidencia').value) {
+                document.getElementById('fechaProvidencia').value = hoy;
+            }
+
+            document.querySelectorAll('input, select, textarea').forEach(element => {
+                element.addEventListener('input', generarDocumento);
+                element.addEventListener('change', generarDocumento);
+            });
+
+            generarDocumento();
+            setInterval(guardarDatos, 30000);
+        };
+    </script>
+</body>
+</html>
